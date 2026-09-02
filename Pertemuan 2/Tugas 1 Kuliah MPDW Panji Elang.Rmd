@@ -1,0 +1,618 @@
+---
+title: "Tugas 1 Kuliah MPDW Panji Elang"
+author: "Panji Elang Permanajati"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    code_folding: show
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+# Persiapan Data & Model Regresi Awal (OLS)
+
+### Input Data (2010-2021)
+
+```{r}
+library(readxl)
+
+data_ipm <- read_excel("C:\\Users\\darmo\\Downloads\\Data MPDW Kepulauan Riau 2010-2021.xlsx")
+
+data_ipm
+```
+
+Data yang digunakan terdiri atas 12 pengamatan tahunan, yaitu nilai
+Indeks Pembangunan Manusia (IPM) Provinsi Kepulauan Riau selama periode
+2010–2021. Pada pemodelan ini, variabel Tahun digunakan sebagai variabel
+bebas $(X)$, sedangkan IPM digunakan sebagai variabel respon (Y)
+
+### Model Regresi Linear
+
+```{r}
+model_ols <- lm(IPM ~ Tahun, data = data_ipm)
+summary(model_ols)
+```
+
+#### 1. Persamaan Regresi
+
+Diperoleh persamaan regresi linier sebagai berikut:
+
+$$ \hat{Y}=-781,8167+0,4245\times Tahun $$
+
+- Konstanta / Intercept (-781,8167): Nilai tersebut menggambarkan
+  estimasi IPM ketika variabel Tahun bernilai 0. Namun, nilai konstanta
+  ini tidak memiliki interpretasi praktis yang relevan karena tahun 0
+  berada jauh di luar rentang tahun pengamatan, yaitu 2010–2021.
+
+- Koefisien Regresi / Slop (0,4245): Koefisien Tahun memiliki nilai
+  positif, sehingga menunjukkan adanya kecenderungan peningkatan IPM
+  dari waktu ke waktu. Setiap pertambahan 1 tahun, nilai Indeks
+  Pembangunan Manusia (IPM) Kepulauan Riau diperkirakan mengalami
+  kenaikan rata-rata sebesar 0,4245 unit.
+
+#### 2. Uji Signifikansi Parsial (Uji t)
+
+Hipotesis: $$ H_0:\beta_1=0 $$
+
+(Tahun tidak memberikan pengaruh yang signifikan terhadap IPM)
+
+$$ H_1:\beta_1\neq0 $$
+
+(Tahun memberikan pengaruh yang signifikan terhadap IPM)
+
+- Nilai statistik t: 22,19
+
+- Nilai p-value: $7,76\times10^{-10}$ atau 0,000000000776
+
+- Kesimpulan: Karena nilai $p\text{-value}<0,05$, maka $H_0$ ditolak.
+  Dengan demikian, variabel Tahun terbukti memberikan pengaruh yang
+  sangat signifikan terhadap peningkatan nilai IPM pada taraf nyata 5%.
+
+#### 3. Uji F
+
+- Nilai statistik F: 492,4 dengan derajat bebas (1, 10)
+
+- Nilai p-value: $7,755\times10^{-10}$
+
+- Kesimpulan: Karena $p\text{-value}<0,05$, maka model regresi yang
+  dibentuk signifikan dan layak digunakan untuk menggambarkan hubungan
+  linier antara waktu (Tahun) dengan nilai IPM.
+
+#### 4. Koefisien Determinasi $(R^2)$
+
+- Nilai R-squared: 0,9801 (98,01%)
+
+- Nilai Adjusted R-squared: 0,9781 (97,81%)
+
+- Kesimpulan: Nilai $R^2$ sebesar 98,01% menunjukkan bahwa sebesar
+  98,01% variasi nilai IPM dapat diterangkan oleh variabel Tahun melalui
+  model regresi yang terbentuk. Sementara itu, sebesar 1,99% sisanya
+  dijelaskan oleh faktor-faktor lain yang tidak dimasukkan ke dalam
+  model.
+
+#### 5. Ukuran Kesalahan Model (Residual Standard Error)
+
+- Nilai RSE: 0,2288 dengan derajat bebas $df=10$
+- Kesimpulan: Nilai tersebut menunjukkan bahwa rata-rata besarnya
+  penyimpangan antara IPM hasil pengamatan aktual dengan IPM yang
+  diprediksi oleh model adalah sekitar 0,2288 unit.
+
+Hasil regresi menunjukkan bahwa **Tahun berpengaruh positif dan
+signifikan terhadap IPM**, dengan *p-value* \< 0,05. Koefisien regresi
+sebesar **0,4245** menunjukkan bahwa IPM meningkat rata-rata **0,4245
+poin setiap tahun**. Model mampu menjelaskan **98,01% variasi IPM**,
+berdasarkan nilai koefisien determinasi ($R^2$) sebesar 98,01%.
+
+# Uji Autokorelasi (Durbin-Watson)
+
+### Memanggil library lmtest
+
+```{r}
+library(lmtest)
+```
+
+### Uji Durbin-Watson
+
+```{r}
+dwtest(model_ols)
+```
+
+#### 1. Berdasarkan p-value
+
+- Nilai p-value: 0,001426
+
+- Taraf Nyata (α): 0,05
+
+- Keputusan: Karena p-value (0,001426) \< α (0,05), maka Tolak $H_0$.
+
+- Kesimpulan: Terdapat bukti yang cukup untuk menyatakan bahwa sisaan
+  pada model regresi OLS mengalami autokorelasi positif.
+
+#### 2. Berdasarkan tabel Durbin-Watson (DW)
+
+Untuk $N=12$ dan $k=1$ pada taraf nyata $\alpha=5\%$:
+
+- Nilai statistik $DW$ model: 0,7724
+
+- Batas kritis tabel: $d_L\approx0,971$ dan $d_U\approx1,331$
+
+Kriteria Keputusan:
+
+- Nilai $DW=0,7724$ berada di bawah batas bawah $d_L$, yaitu
+  $0,7724<0,971$. Oleh karena itu, $H_0$ ditolak, sehingga terdapat
+  indikasi autokorelasi positif pada sisaan model.
+
+> *Hasil uji Durbin-Watson pada model OLS menghasilkan nilai statistik*
+> $DW = 0,7724$ dengan $p$-value sebesar $0,001426$. Karena $DW < d_L$
+> $(0,7724 < 0,971)$ dan $p$-value $< 0,05$, maka dapat disimpulkan
+> bahwa **sisaan model OLS mengalami autokorelasi positif**. Oleh karena
+> itu, diperlukan metode perbaikan autokorelasi menggunakan
+> **Cochrane-Orcutt** atau **Hildreth-Lu**.
+
+# Penanganan Autokorelasi (Cochrane-Orcutt)
+
+### Memanggil library orcutt
+
+```{r}
+install.packages("https://cran.r-project.org/src/contrib/Archive/orcutt/orcutt_2.1.tar.gz", repos = NULL, type = "source")
+library("orcutt")
+```
+
+### Proses penanganan dengan Cochrane-Orcutt
+
+```{r}
+model_co <- cochrane.orcutt(model_ols)
+model_co
+```
+
+Hasil estimasi menunjukkan bahwa metode Cochrane-Orcutt mampu
+memperbaiki masalah autokorelasi yang terdapat pada model regresi OLS
+awal.
+
+#### 1. Estimasi Parameter Nilai $\rho$ (Autokorelasi Lag-1)
+
+- Nilai $\rho$ (Rho): 0,651462
+
+- Jumlah Iterasi (Interaction): 76 iterasi.
+
+- Penjelasan: Proses Cochrane-Orcutt mencapai konvergensi setelah 76
+  iterasi dan menghasilkan estimasi koefisien autokorelasi sebesar
+  $\hat{\rho}=0,651462$. Nilai rho yang positif menunjukkan adanya
+  hubungan positif antara sisaan pada suatu periode dengan periode
+  sebelumnya pada model awal.
+
+#### 2. Pengujian Autokorelasi Setelah Transformasi (Uji Durbin-Watson)
+
+- Sebelum Transformasi (Original):
+  $$ DW=0,77240 \quad (p\text{-value}=0,001426<0,05) $$
+
+Hasil tersebut menunjukkan bahwa sebelum dilakukan koreksi, model
+terindikasi mengalami autokorelasi positif.
+
+```{r}
+dwtest(model_co)
+```
+
+- Setelah Transformasi (Transformed):
+  $$ DW=1,94827 \quad (p\text{-value}=0,315>0,05) $$
+- Evaluasi Tabel DW $(N=12,\ k=1)$:
+
+Pada taraf nyata $\alpha=5\%$, diperoleh batas kritis:
+
+$$ d_L\approx0,971 $$
+
+dan
+
+$$ d_U\approx1,331 $$
+
+Nilai Durbin-Watson setelah transformasi sebesar 1,94827 memenuhi:
+
+$$ d_U<DW<4-d_U $$
+
+atau:
+
+$$ 1,331<1,94827<2,669 $$
+
+- Kesimpulan: Karena $p\text{-value}>0,05$ dan nilai $DW$ berada pada
+  daerah tidak terdapat autokorelasi, maka gagal menolak $H_0$. Dengan
+  demikian, sisaan setelah transformasi Cochrane-Orcutt sudah tidak
+  menunjukkan adanya autokorelasi. Nilai $DW=1,94827$ yang mendekati 2
+  juga menunjukkan bahwa korelasi antar sisaan telah berkurang secara
+  signifikan.
+
+#### 3. Persamaan Model Terkoreksi (Cochrane-Orcutt)
+
+Berdasarkan koefisien hasil estimasi, persamaan regresi setelah
+dilakukan koreksi autokorelasi adalah:
+
+$$ \widehat{IPM}=-613,2595+0,3410\times Tahun $$
+
+- Konstanta / Intercept (-613,2595): Menunjukkan nilai dugaan IPM ketika
+  variabel Tahun bernilai 0 setelah model disesuaikan terhadap adanya
+  autokorelasi. Namun, konstanta tersebut tidak memiliki interpretasi
+  praktis karena Tahun = 0 berada di luar periode pengamatan.
+
+- Slope / Koefisien Tahun (0,3410): Setelah model dikoreksi menggunakan
+  Cochrane-Orcutt, setiap kenaikan 1 tahun diperkirakan akan
+  meningkatkan nilai IPM Kepulauan Riau rata-rata sebesar 0,3410 poin.
+
+> **Penanganan Autokorelasi dengan Metode Cochrane-Orcutt**\
+> Metode **Cochrane-Orcutt** menghasilkan estimasi $\hat{\rho}=0,651462$
+> setelah **76 iterasi**. Setelah transformasi, diperoleh $DW=1,94827$
+> dengan $p$-value $=0,315>0,05$, sehingga **tidak terdapat lagi
+> indikasi autokorelasi pada sisaan model**. Persamaan regresi hasil
+> koreksi adalah $\widehat{IPM}=-613,2595+0,3410\times\text{Tahun}$.
+
+### Menampilkan ringkasan hasil regresi Cochrane-Orcutt
+
+```{r}
+summary(model_co)
+```
+
+#### 1. Persamaan Model Regresi Terkoreksi
+
+Persamaan regresi linier setelah dilakukan transformasi menggunakan
+metode Cochrane-Orcutt adalah:
+
+$$ \widehat{IPM}=-613,2595+0,3410\times Tahun $$
+
+- Konstanta / Intercept (-613,2595): Menunjukkan nilai estimasi IPM
+  ketika variabel Tahun bernilai 0 setelah model dikoreksi terhadap
+  autokorelasi.
+
+- Koefisien Regresi / Slope (0,3410): Setelah dilakukan koreksi
+  autokorelasi, setiap kenaikan waktu sebesar 1 tahun diperkirakan
+  meningkatkan IPM Kepulauan Riau rata-rata sebesar 0,3410 poin.
+
+#### 2. Uji Signifikansi Parameter (Uji t)
+
+Hipotesis: $$ H_0:\beta_1=0 $$
+
+(Tahun tidak berpengaruh signifikan terhadap IPM)
+
+$$ H_1:\beta_1\neq0 $$
+
+(Tahun berpengaruh signifikan terhadap IPM)
+
+- Hasil Uji: Nilai $t\text{-statistic}=7,941$ dengan
+  $p\text{-value}=2,348\times10^{-5}$ atau 0,00002348.
+
+- Kesimpulan: Karena $p\text{-value}<0,05$, maka Tolak $H_0$. Artinya,
+  setelah dilakukan koreksi autokorelasi, variabel Tahun tetap
+  menunjukkan pengaruh positif dan signifikan terhadap IPM Kepulauan
+  Riau pada taraf nyata 5%.
+
+#### 3. Kebaikan Model (Koefisien Determinasi / $R^2$)
+
+- Nilai $R^2$ (Multiple R-squared): 0,8751 (87,51%)
+
+- Interpretasi: Nilai tersebut menunjukkan bahwa 87,51% variasi IPM
+  Kepulauan Riau dapat diterangkan oleh variabel Tahun pada model hasil
+  transformasi. Sementara itu, 12,49% sisanya berkaitan dengan variabel
+  lain yang tidak tercakup dalam model.
+
+#### 4. Kelayakan Model (Uji F)
+
+- Hasil Uji: Nilai $F\text{-statistic}=63,1$ dengan
+  $p\text{-value}<2,348\times10^{-5}$.
+
+- Kesimpulan: Karena $p\text{-value}<0,05$, model regresi hasil koreksi
+  signifikan dan layak digunakan untuk menjelaskan hubungan antara Tahun
+  dengan IPM.
+
+#### 5. Evaluasi Uji Durbin-Watson (Penanganan Autokorelasi)
+
+- Sebelum Transformasi: $DW=0,77240$ dengan
+  $p\text{-value}=0,001426<0,05$, sehingga model awal menunjukkan adanya
+  autokorelasi positif.
+
+- Setelah Transformasi: $DW=1,94827$ dengan $p\text{-value}=0,315>0,05$.
+
+- Kesimpulan: Setelah diterapkan metode Cochrane-Orcutt, nilai $DW$
+  berada pada daerah bebas autokorelasi:
+
+$$ d_U<DW<4-d_U $$ $$ 1,331<1,94827<2,669 $$
+
+Dengan demikian, sisaan model hasil transformasi sudah tidak menunjukkan
+adanya autokorelasi, sehingga metode Cochrane-Orcutt berhasil
+memperbaiki permasalahan autokorelasi pada model awal.
+
+### Mengecek kembali nilai Durbin-Watson setelah transformasi Cochrane-Orcutt
+
+```{r}
+dwtest(model_co)
+```
+
+#### 1. Berdasarkan p-value
+
+- Nilai p-value: 0,315
+
+- Taraf Nyata (α): 0,05
+
+- Keputusan: Karena p-value (0,315) \> α (0,05), maka Gagal Tolak $H_0$.
+
+- Kesimpulan: Tidak terdapat bukti yang cukup untuk menunjukkan adanya
+  autokorelasi positif pada sisaan model setelah transformasi
+  Cochrane-Orcutt. Dengan demikian, indikasi autokorelasi pada model
+  awal sudah dapat diatasi.
+
+#### 2. Pembacaan Berdasarkan Tabel Durbin-Watson ($DW$)
+
+Untuk sampel $N=12$ dan $k=1$ pada taraf nyata $\alpha=5\%$:
+
+- Nilai statistik $DW$ model Cochrane-Orcutt: 1,9483
+
+- Batas kritis tabel $DW$: $d_L\approx0,971$ dan $d_U\approx1,331$
+
+- Rentang bebas autokorelasi $(d_U<DW<4-d_U)$: $$ 1,331<DW<2,669 $$
+
+Kriteria Keputusan:
+
+- Nilai $DW=1,9483$ berada pada rentang $1,331<1,9483<2,669$, sehingga
+  sisaan model berada pada daerah bebas autokorelasi.
+
+- Selain itu, nilai $DW$ yang mendekati 2 menunjukkan bahwa korelasi
+  antar sisaan sudah tidak terindikasi setelah dilakukan transformasi.
+
+> *Hasil uji Durbin-Watson pada model Cochrane-Orcutt (`model_co`)
+> menghasilkan nilai* $DW=1,9483$ dengan $p$-value $=0,315$. Karena
+> $p$-value $>0,05$ dan nilai $DW$ berada pada daerah bebas autokorelasi
+> $(1,331<1,9483<2,669)$, maka dapat disimpulkan bahwa **sisaan model
+> setelah transformasi Cochrane-Orcutt sudah tidak mengalami
+> autokorelasi**.
+
+# Penanganan Autokorelasi: Hildreth-Lu
+
+### Membuat fungsi Hildreth-Lu manual
+
+```{r}
+hildreth.lu <- function(rho, model) {
+  x <- model.matrix(model)[, -1]
+  y <- model.response(model.frame(model))
+  n <- length(y)
+  t <- 2:n
+  
+  y_trans <- y[t] - rho * y[t-1]
+  x_trans <- x[t] - rho * x[t-1]
+  
+  return(lm(y_trans ~ x_trans))
+}
+```
+
+### Pencarian nilai Rho optimum (pencarian kasar: 0.1 s.d 0.99)
+
+```{r}
+rho_grid <- c(seq(0.1, 0.8, by = 0.1), seq(0.90, 0.99, by = 0.01))
+tab_hl <- data.frame(
+  rho = rho_grid,
+  SSE = sapply(rho_grid, function(r) deviance(hildreth.lu(r, model_ols)))
+)
+```
+
+### Menentukan rho dengan SSE minimum
+
+```{r}
+rho_opt <- tab_hl$rho[which.min(tab_hl$SSE)]
+cat("Nilai Rho Optimum Hildreth-Lu:", rho_opt, "\n")
+```
+
+Interpretasi Nilai $\rho$ Optimum - Nilai $\rho$ (Rho): 0,7
+
+- Penjelasan: Berdasarkan proses grid search, nilai $\rho=0,7$ dipilih
+  karena menghasilkan SSE (Sum of Squared Errors) paling kecil
+  dibandingkan nilai $\rho$ lainnya pada rentang $[-0,999; 0,999]$.
+  Nilai rho yang positif juga menunjukkan adanya hubungan positif antara
+  sisaan periode $t$ dengan periode sebelumnya $(t-1)$.
+
+> **Penanganan Autokorelasi dengan Metode Hildreth-Lu**\
+> Metode **Hildreth-Lu** menggunakan *grid search* untuk menentukan
+> nilai $\rho$ yang menghasilkan SSE minimum. Dari proses tersebut
+> diperoleh $\rho$ optimum sebesar **0,7**. Nilai ini selanjutnya
+> digunakan untuk mentransformasi variabel IPM dan Tahun sebagai langkah
+> koreksi terhadap autokorelasi.
+
+### Model terbaik Hildreth-Lu berdasarkan rho optimum
+
+```{r}
+model_hl <- hildreth.lu(rho_opt, model_ols)
+summary(model_hl)
+```
+
+#### 1. Persamaan Model Regresi Terkoreksi
+
+Persamaan regresi setelah transformasi Hildreth-Lu dengan $\rho=0,7$
+adalah:
+
+$$ Y^*=-174,0264+0,3246X^* $$
+
+Dalam bentuk variabel awal:
+
+$$ \widehat{IPM}_t-0,7IPM_{t-1} = -174,0264+ 0,3246(Tahun_t-0,7Tahun_{t-1}) $$
+
+- Konstanta / Intercept (-174,0264): Merupakan nilai dugaan $Y^*$ ketika
+  $X^*=0$. Untuk memperoleh konstanta pada skala data awal, dilakukan
+  penyesuaian menggunakan $(1-\rho)$:
+
+$$ \beta_0= \frac{-174,0264}{1-0,7} = \frac{-174,0264}{0,3} \approx-580,0880 $$
+
+- Koefisien Regresi / Slope (0,3246): Setelah autokorelasi dikoreksi
+  dengan $\rho=0,7$, setiap pertambahan waktu 1 tahun diperkirakan
+  diikuti peningkatan IPM Kepulauan Riau rata-rata sebesar 0,3246 poin.
+
+#### 2. Uji Signifikansi Parameter (Uji t)
+
+Hipotesis: $$ H_0:\beta_1=0 $$
+
+(Tahun tidak berpengaruh signifikan terhadap IPM)
+
+$$ H_1:\beta_1\neq0 $$
+
+(Tahun berpengaruh signifikan terhadap IPM)
+
+- Hasil Uji: Nilai $t\text{-statistic}=6,493$ dengan
+  $p\text{-value}=0,000112$ $(1,12\times10^{-4})$.
+
+- Keputusan & Kesimpulan: Karena $p\text{-value}<0,05$, maka Tolak
+  $H_0$. Artinya, setelah koreksi menggunakan Hildreth-Lu, variabel
+  Tahun tetap berpengaruh positif dan signifikan terhadap IPM Kepulauan
+  Riau pada taraf nyata 5%.
+
+#### 3. Kebaikan Model (Koefisien Determinasi / $R^2$)
+
+- Nilai $R^2$ (Multiple R-squared): 0,8241 (82,41%)
+
+- Interpretasi: Sebesar 82,41% variasi IPM Kepulauan Riau dapat
+  diterangkan oleh variabel Tahun melalui model Hildreth-Lu, sedangkan
+  17,59% sisanya berkaitan dengan faktor lain di luar model.
+
+#### 4. Kelayakan Model (Uji F)
+
+- Hasil Uji: Nilai $F\text{-statistic}=42,16$ dengan
+  $p\text{-value}=0,0001123$.
+
+- Keputusan & Kesimpulan: Karena $p\text{-value}<0,05$, maka model
+  regresi Hildreth-Lu signifikan dan layak digunakan untuk menjelaskan
+  hubungan antara Tahun dan IPM.
+
+#### 5. Standar Error Sisaan (Residual Standard Error)
+
+- Nilai: 0,1573 dengan $df=9$.
+
+- Interpretasi: Nilai tersebut menunjukkan bahwa besarnya penyimpangan
+  sisaan setelah transformasi Hildreth-Lu adalah sekitar 0,1573 unit.
+  Nilai ini lebih kecil dibandingkan RSE model OLS awal sebesar 0,2288,
+  sehingga kesalahan sisaan pada model hasil koreksi menjadi lebih
+  rendah.
+
+### Mengecek nilai Durbin-Watson setelah transformasi Hildreth-Lu
+
+```{r}
+dwtest(model_hl)
+```
+
+#### 1. Berdasarkan p-value
+
+- Nilai p-value: 0,3509
+
+- Taraf Nyata (α): 0,05
+
+- Keputusan: Karena p-value (0,3509) \> α (0,05), maka Gagal Tolak
+  $H_0$.
+
+- Kesimpulan: Tidak terdapat bukti yang cukup untuk menunjukkan adanya
+  autokorelasi positif pada sisaan model Hildreth-Lu. Dengan demikian,
+  autokorelasi pada model awal sudah dapat ditangani.
+
+#### 2. Berdasarkan Tabel Durbin-Watson ($DW$)
+
+Untuk sampel $N=12$ dan $k=1$ pada taraf nyata $\alpha=5\%$:
+
+- Nilai statistik $DW$ model Hildreth-Lu: 2,004
+
+- Batas kritis tabel $DW$: $d_L\approx0,971$ dan $d_U\approx1,331$
+
+- Rentang bebas autokorelasi $(d_U<DW<4-d_U)$: $$ 1,331<DW<2,669 $$
+
+Kriteria Keputusan:
+
+- Nilai $DW=2,004$ memenuhi $1,331<2,004<2,669$, sehingga sisaan model
+  berada pada daerah bebas autokorelasi.
+
+- Nilai $DW$ juga sangat dekat dengan 2, yang menunjukkan bahwa tidak
+  terdapat indikasi korelasi antar sisaan setelah dilakukan transformasi
+  Hildreth-Lu.
+
+> *Hasil uji Durbin-Watson pada model Hildreth-Lu (`model_hl`)
+> menghasilkan nilai* $DW=2,004$ dan $p$-value $=0,3509$. Karena
+> $p$-value $>0,05$ serta $DW$ berada pada rentang bebas autokorelasi
+> $(1,331<2,004<2,669)$, maka **sisaan model Hildreth-Lu sudah tidak
+> menunjukkan adanya autokorelasi**. Nilai $DW$ yang mendekati 2 juga
+> mendukung hasil tersebut.
+
+### Menghitung Persamaan Regresi Asli dari Hildreth-Lu
+
+```{r}
+b0_star <- coef(model_hl)[1]
+b1_star <- coef(model_hl)[2]
+
+b0_asli <- b0_star / (1 - rho_opt)
+b1_asli <- b1_star
+
+cat(sprintf("Persamaan Regresi Asli Hildreth-Lu: Y = %.5f + %.5f X\n", b0_asli, b1_asli))
+```
+
+Persamaan Regresi Skala Asal Hildreth-Lu
+
+Persamaan regresi Hildreth-Lu setelah dikembalikan ke skala data awal
+adalah:
+
+$$ \widehat{IPM}_t=-580,08813+0,32458\times Tahun_t $$
+
+Interpretasi Komponen Persamaan
+
+#### 1. Konstanta / Intercept $(\beta_0=-580,08813)$:
+
+Nilai konstanta pada skala asal diperoleh dengan:
+
+$$ \beta_0= \frac{\beta_0^*}{1-\rho} = \frac{-174,02644}{1-0,7} = -580,08813 $$
+
+Secara matematis, konstanta tersebut menunjukkan nilai dugaan IPM ketika
+variabel Tahun bernilai 0. Namun, nilai ini tidak memiliki makna praktis
+karena berada di luar periode pengamatan.
+
+#### 2. Koefisien Regresi / Slope $(\beta_1=0,32458)$:
+
+- Nilai koefisien slope tetap sama ketika model transformasi
+  dikembalikan ke skala asal.
+
+- Interpretasi: Setelah autokorelasi dikoreksi menggunakan $\rho=0,7$,
+  setiap pertambahan waktu 1 tahun diperkirakan meningkatkan IPM
+  Kepulauan Riau rata-rata sebesar 0,32458 poin.
+
+> **Model Regresi Skala Asal Hildreth-Lu**\
+> Setelah model Hildreth-Lu dikembalikan ke skala awal, diperoleh
+> persamaan $\widehat{IPM}_t=-580,08813+0,32458\times\text{Tahun}_t$.
+> Koefisien sebesar **0,32458** menunjukkan bahwa setelah koreksi
+> autokorelasi, IPM Kepulauan Riau diperkirakan meningkat rata-rata
+> **0,32458 poin setiap tahun**.
+
+# Kesimpulan
+
+#### 1. Model Regresi OLS Awal Mengalami Autokorelasi: Model OLS menghasilkan persamaan
+
+$$ \widehat{IPM}=-781,8167+0,4245\times Tahun $$
+
+Hasil uji Durbin-Watson menunjukkan $DW=0,7724$ dengan
+$p\text{-value}=0,001426<0,05$. Dengan demikian, sisaan pada model OLS
+awal terindikasi mengalami autokorelasi positif, sehingga diperlukan
+koreksi terhadap model.
+
+#### 2. Penanganan Autokorelasi: Kedua metode yang digunakan mampu mengatasi masalah autokorelasi, dengan hasil:
+
+- Cochrane-Orcutt $(\hat{\rho}=0,6515)$: diperoleh $DW=1,9483$ dengan
+  $p\text{-value}=0,315$.
+
+- Hildreth-Lu $(\rho=0,7000)$: diperoleh $DW=2,0040$ dengan
+  $p\text{-value}=0,3509$.
+
+Kedua metode menghasilkan $p\text{-value}>0,05$ dan nilai $DW$ berada
+pada rentang bebas autokorelasi $(1,331<DW<2,669)$. Artinya, sisaan
+model setelah koreksi sudah tidak menunjukkan adanya autokorelasi.
+
+#### 3. Pemilihan Model Terbaik:
+
+Metode Hildreth-Lu dipilih sebagai model terbaik karena menghasilkan
+nilai $DW=2,0040$, yang paling mendekati nilai ideal 2 dibandingkan
+hasil Cochrane-Orcutt.
+
+#### 4. Persamaan Akhir dan Interpretasi: Model Hildreth-Lu pada skala asal menghasilkan persamaan:
+
+$$ \widehat{IPM}_t=-580,08813+0,32458\times Tahun_t $$
+
+Persamaan tersebut menunjukkan bahwa setelah dilakukan koreksi
+autokorelasi, IPM Kepulauan Riau diperkirakan meningkat rata-rata
+sebesar 0,32458 poin setiap tahunnya.
