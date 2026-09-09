@@ -1,0 +1,220 @@
+---
+title: "Praktikum 3 MPDW"
+author: "Panji Elang Permanajati"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: yeti
+    toc: true
+    toc_float: true
+  word_document: default
+  pdf_document: default
+---
+
+# Packages
+```{r}
+library(dLagM)
+library(dynlm)
+library(MLmetrics)
+library(lmtest)
+library(car)
+library(rio)
+library(readxl)
+```
+
+```{r}
+data <- read.csv("C:\\Users\\darmo\\Downloads\\NewDelhi_Air_quality (1).csv")
+data <- data[order(data$ts), ]
+data$t <- 1:nrow(data)
+str(data)
+```
+
+```{r}
+head(data)
+```
+
+# Pemilihan Peubah Independen
+
+```{r}
+polutan <- data[, c("CO", "no2", "o3", "pm10", "pm25", "so2")]
+korelasi <- sapply(polutan, function(x) cor(data$AQI, x))
+sort(korelasi, decreasing = TRUE)
+```
+
+Polutan CO (Karbon Monoksida) memiliki tingkat korelasi positif yang sangat kuat terhadap AQI (sekitar $r = 0,798$). Hal ini mengindikasikan bahwa peningkatan konsentrasi emisi gas kendaraan dan pembakaran (CO) secara signifikan mendorong kenaikan Indeks Kualitas Udara (AQI) di Kota New Delhi.
+
+```{r}
+data$Yt <- data$AQI
+data$Xt <- data$CO
+```
+
+
+# Pembagian Data Train dan Test
+
+```{r}
+n <- nrow(data)
+n_train <- round(0.75 * n)
+
+train <- data[1:n_train, ]
+test  <- data[(n_train + 1):n, ]
+
+x_train <- as.vector(train$Xt)
+y_train <- as.vector(train$Yt)
+x_test  <- as.vector(test$Xt)
+y_test  <- as.vector(test$Yt)
+
+train.ts <- ts(train)
+test.ts  <- ts(test)
+
+c(n_total = n, n_train = nrow(train), n_test = nrow(test))
+```
+
+# Model Koyck
+
+Model Koyck mengasumsikan bahwa pengaruh peubah lag independen terhadap peubah dependen semakin kecil seiring bertambah jauhnya jarak lag, dengan bentuk umum:
+
+```{r}
+model.koyck <- koyckDlm(x = x_train, y = y_train)
+summary(model.koyck)
+```
+
+```{r}
+aic_koyck <- AIC(model.koyck)
+bic_koyck <- BIC(model.koyck)
+```
+
+## Peramalan dan Akurasi Model Koyck
+
+```{r}
+fore.koyck <- forecast(model = model.koyck, x = x_test, h = nrow(test))
+fore.koyck
+```
+
+```{r}
+mape_koyck <- MAPE(fore.koyck$forecasts, y_test) * 100
+mape_koyck
+```
+
+```{r}
+GoF(model.koyck)
+```
+
+Model Koyck mengasumsikan efek penurunan bobot lag secara geometris ($Y_{t-1}$ dan $X_t$). Meskipun simpel, model ini cenderung memiliki kriteria goodness of fit (AIC/BIC) yang lebih tinggi serta MAPE yang kurang presisi dibandingkan model dinamis lainnya karena pemulusan lag-nya yang kaku.
+
+# Regression with Distributed Lag (DLM)
+
+Model distributed lag memasukkan peubah X pada waktu sekarang beserta beberapa lag-nya sebagai prediktor. Penentuan panjang lag optimum (q) dilakukan menggunakan finiteDLMauto() berdasarkan kriteria AIC.
+
+```{r}
+opt.dlm <- finiteDLMauto(formula = Yt ~ Xt, data = data.frame(train),
+                         q.min = 1, q.max = 6, model.type = "dlm",
+                         error.type = "AIC", trace = FALSE)
+opt.dlm
+```
+
+Berdasarkan hasil pencarian di atas, panjang lag optimum dipilih pada nilai AIC terendah. Pemodelan selanjutnya menggunakan panjang lag optimum tersebut.
+
+```{r}
+q_opt <- as.numeric(rownames(opt.dlm[which.min(opt.dlm$AIC), ]))
+model.dlm <- dlm(x = x_train, y = y_train, q = q_opt)
+summary(model.dlm)
+```
+
+```{r}
+aic_dlm <- AIC(model.dlm)
+bic_dlm <- BIC(model.dlm)
+```
+
+## Peramalan dan Akurasi Model DLM
+
+```{r}
+fore.dlm <- forecast(model = model.dlm, x = x_test, h = nrow(test))
+fore.dlm
+```
+
+```{r}
+mape_dlm <- MAPE(fore.dlm$forecasts, y_test) * 100
+mape_dlm
+```
+
+```{r}
+GoF(model.dlm)
+```
+
+Berdasarkan nilai AIC terendah dari pencarian finiteDLMauto(), diperoleh lag optimum $q$. Hasil estimasi menunjukkan bahwa nilai AQI saat ini tidak hanya dipengaruhi oleh kadar CO pada jam yang sama ($CO_t$), melainkan akumulasi dari kadar CO beberapa jam sebelumnya ($CO_{t-1}, CO_{t-2}, \dots$).
+
+# Model Autoregressive Distributed Lag (ARDL)
+
+Model ARDL memasukkan baik lag dari peubah dependen (Y) maupun lag dari peubah independen (X) sekaligus. Penentuan orde optimum (p untuk lag X, q untuk lag Y) dilakukan menggunakan ardlBoundOrders() berdasarkan kriteria AIC.
+
+```{r}
+model.ardl.opt <- ardlBoundOrders(data = data.frame(train), ic = "AIC", formula = Yt ~ Xt)
+p_opt <- model.ardl.opt$p$Xt
+```
+
+```{r}
+q_opt_ardl <- model.ardl.opt$q
+q_opt_ardl
+```
+
+Berdasarkan pencarian tersebut, diperoleh kombinasi orde optimum yang selanjutnya digunakan untuk membangun model ARDL final.
+
+```{r}
+model.ardl <- ardlDlm(formula = Yt ~ Xt, data = train, p = p_opt, q = q_opt_ardl)
+summary(model.ardl)
+```
+
+```{r}
+aic_ardl <- AIC(model.ardl)
+bic_ardl <- BIC(model.ardl)
+```
+
+## Peramalan dan Akurasi Model ARDL
+
+```{r}
+fore.ardl <- forecast(model = model.ardl, x = x_test, h = nrow(test))
+fore.ardl
+```
+
+```{r}
+mape_ardl <- MAPE(fore.ardl$forecasts, y_test) * 100
+mape_ardl
+```
+
+```{r}
+GoF(model.ardl)
+```
+
+Model ARDL menggabungkan pengaruh historis AQI sendiri ($Y_{t-q}$) dan akumulasi pengaruh CO ($X_{t-p}$). Dengan mengakomodasi dinamika dari kedua belah pihak, model ARDL mampu menekan nilai sisaan (residual error) sehingga menghasilkan kriteria AIC/BIC yang paling minim pada data latih.
+
+# Perbandingan dan Pemilihan Model
+
+```{r}
+perbandingan <- data.frame(
+  Model = c("Koyck", paste0("DLM (q=", q_opt, ")"), paste0("ARDL (p=", p_opt, ", q=", q_opt_ardl, ")")),
+  AIC = c(aic_koyck, aic_dlm, aic_ardl),
+  BIC = c(bic_koyck, bic_dlm, bic_ardl),
+  MAPE_Test = c(mape_koyck, mape_dlm, mape_ardl)
+)
+perbandingan
+```
+
+Berdasarkan hasil evaluasi ketiga model regresi dengan peubah lag:
+
+1. Model Koyck menghasilkan nilai kriteria kebaikan model yang relatif tinggi (AIC = 149,54; BIC = 157,42) dan tingkat kesalahan peramalan data uji paling besar (MAPE = 21,48%). Hal ini mengindikasikan bahwa asumsi penurunan lag secara geometris pada Koyck kurang fleksibel dalam memodelkan dinamika hubungan antara konsentrasi CO dan AQI.
+
+2. Model Distributed Lag (DLM $q=6$) memberikan tingkat kesalahan peramalan pada data uji (out-of-sample) yang paling presisi, yaitu dengan MAPE sebesar 10,08%. Hal ini menunjukkan bahwa akumulasi lag CO hingga 6 jam sebelumnya sangat efektif dalam memprediksi fluktuasi AQI ke depan.
+
+3. Model Autoregressive Distributed Lag (ARDL $p=13, q=15$) berhasil memberikan performa goodness-of-fit terbaik pada data latih (in-sample) yang ditandai dengan nilai AIC (69,87) dan BIC (121,44) terkecil di antara ketiga model, serta nilai MAPE data uji yang juga sangat baik (11,46%).
+
+Jika mengutamakan kriteria kebaikan model secara keseluruhan (goodness-of-fit dan efisiensi parameter pada data latih), Model ARDL ($p=13, q=15$) terpilih sebagai model terbaik karena memiliki nilai AIC dan BIC paling minimum. Namun, jika fokus utama pemodelan adalah presisi peramalan masa depan (forecasting), Model DLM ($q=6$) dapat dijadikan alternatif utama karena menghasilkan nilai MAPE data uji terendah (10,08%).
+
+# Kesimpulan
+
+Analisis pada tugas ini menerapkan tiga metode regresi dengan peubah lag (Model Koyck, Distributed Lag Model / DLM, dan Autoregressive Distributed Lag / ARDL) untuk memodelkan hubungan antara Indeks Kualitas Udara / AQI ($Y$) dan konsentrasi Karbon Monoksida / CO ($X$) pada data kualitas udara Kota New Delhi. Dari hasil pemodelan dan evaluasi dapat disimpulkan bahwa:
+
+1. Konsentrasi gas CO pada jam berjalan beserta lag waktu sebelumnya terbukti memiliki pengaruh dinamis yang signifikan terhadap kenaikan AQI.
+
+2. Model ARDL ($p=13, q=15$) terpilih sebagai model terbaik secara umum karena mampu menangkap dependensi lag dari peubah respons AQI ($Y$) sekaligus peubah prediktor CO ($X$), sehingga menghasilkan nilai AIC (69,87) dan BIC (121,44) paling rendah di antara semua model.
+
+3. Kedua model dinamis (DLM dan ARDL) terbukti jauh lebih unggul dibandingkan Model Koyck, di mana DLM ($q=6$) dan ARDL ($p=13, q=15$) sama-sama mampu menekan tingkat kesalahan peramalan (MAPE) hingga kisaran 10%–11% pada data uji.
