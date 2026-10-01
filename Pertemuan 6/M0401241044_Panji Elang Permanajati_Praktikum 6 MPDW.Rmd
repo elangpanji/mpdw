@@ -1,0 +1,420 @@
+---
+title: "M0401241044_Panji Elang Permanajati_Praktikum 6 MPDW"
+author: "Panji Elang Permanajati"
+date: "`r Sys.Date()`"
+lang: id
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+    code_download: true
+    self_contained: true
+    fig_caption: true
+params:
+  nsim: 9999
+  alpha: 0.05
+---
+
+<style>
+/* Teks dan lebar halaman */
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #29465b;
+  background: #ffffff;
+}
+.main-container {
+  max-width: 1200px !important;
+}
+p { margin-bottom: 14px; }
+
+/* Kartu judul */
+#header {
+  background: linear-gradient(110deg, #355f70 0%, #657087 52%, #c45689 100%);
+  padding: 42px 34px 32px;
+  margin: 20px 0 34px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(35, 58, 76, 0.14);
+}
+#header .title {
+  color: white;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 18px 0 0;
+  padding-bottom: 10px;
+  border-bottom: 3px solid rgba(255, 255, 255, 0.65);
+}
+#header .subtitle {
+  color: white;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 5px 0 12px;
+}
+#header .author,
+#header .date {
+  color: white;
+  font-size: 14px;
+  font-weight: 400;
+  margin: 6px 0;
+}
+
+/* Judul bagian */
+h1, h2, h3, h4 {
+  color: #173e59;
+  font-weight: 600;
+  line-height: 1.35;
+}
+h1:not(.title) {
+  font-size: 32px;
+  margin-top: 38px;
+  padding-bottom: 9px;
+  border-bottom: 3px solid #efa2c2;
+}
+h2:not(.subtitle) { font-size: 26px; margin-top: 30px; }
+h3 { font-size: 21px; margin-top: 24px; }
+h4 { font-size: 17px; }
+
+/* Daftar isi */
+#TOC {
+  font-size: 13px;
+  line-height: 1.55;
+  border: 1px solid #efb6cf;
+  border-radius: 7px;
+  background: white;
+}
+.tocify {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.tocify-item { padding-top: 3px; padding-bottom: 3px; }
+.tocify-subheader { background: #fff7fb; }
+#TOC .tocify-item.active,
+#TOC .tocify-item.active:hover,
+#TOC .list-group-item.active {
+  color: white;
+  background: #bd4c80;
+  border-color: #bd4c80;
+}
+.toc-section-number { margin-right: 0.35em; }
+
+/* Tautan dan kode */
+a { color: #a33768; }
+a:hover { color: #762449; }
+pre {
+  background: #f7f9fb;
+  border: 1px solid #dce5ec;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+pre code { white-space: pre; }
+p code, li code, td code {
+  color: #91406a;
+  background: #f9edf3;
+  border-radius: 4px;
+}
+.code-folding-btn {
+  margin-bottom: 6px;
+  border-radius: 4px;
+}
+#header .btn {
+  color: #173e59;
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+/* Tabel */
+table {
+  width: 100%;
+  font-size: 14px;
+  margin: 18px 0 24px;
+}
+table th {
+  background: #f5e5ed;
+  color: #173e59;
+}
+table th, table td {
+  padding: 10px 12px !important;
+  border-bottom: 1px solid #e6ebef;
+}
+table tbody tr:nth-child(even) { background: #fafbfd; }
+caption, .caption {
+  color: #526779;
+  font-size: 13px;
+}
+
+/* Kotak penjelasan */
+blockquote {
+  background: #f2f7fa;
+  border-left: 5px solid #54889b;
+  padding: 16px 20px;
+  font-size: 15px;
+}
+.callout {
+  background: #fdf0f6;
+  border-left: 5px solid #bd4c80;
+  border-radius: 6px;
+  padding: 18px 22px;
+  margin: 22px 0;
+}
+.callout strong { color: #92345f; }
+.pause {
+  background: #fff8e9;
+  border-left: 5px solid #d99a28;
+  padding: 16px 20px;
+  margin: 22px 0;
+}
+details {
+  border: 1px solid #e6c6d6;
+  border-radius: 7px;
+  padding: 12px 18px;
+  margin: 20px 0;
+}
+summary {
+  color: #92345f;
+  font-weight: 600;
+  cursor: pointer;
+}
+img { max-width: 100%; height: auto; }
+
+/* Tampilan layar kecil */
+@media (max-width: 767px) {
+  #header { padding: 26px 20px; }
+  #header .title { font-size: 28px; }
+  #header .subtitle { font-size: 19px; }
+  h1:not(.title) { font-size: 27px; }
+  .tocify { max-height: 300px; }
+}
+
+/* Tampilan cetak */
+@media print {
+  #TOC, .code-folding-btn, .code-tools { display: none; }
+  #header {
+    background: white !important;
+    box-shadow: none;
+    border: 1px solid #cccccc;
+  }
+  #header .title, #header .subtitle,
+  #header .author, #header .date { color: #173e59; }
+  .main-container { max-width: 100% !important; }
+  pre { white-space: pre-wrap; }
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = TRUE, error = FALSE,
+  fig.width = 8.5, fig.height = 5.4, dpi = 140,
+  fig.align = "center", out.width = "100%", collapse = TRUE,
+  comment = "#>"
+)
+options(width = 90)
+```
+
+# Import dan Load Data
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(tseries)
+library(forecast)
+library(TSA)
+library(lmtest)
+```
+
+```{r}
+data <- read_excel("C:\\Users\\darmo\\Downloads\\data rata rata suhu kota bogor jan 2024-sept 2026.xlsx")
+
+head(data)
+str(data)
+
+suhu <- ts(data$temper)
+plot.ts(suhu, main="Plot Suhu Rata-Rata Harian Kota Bogor", ylab="Suhu (°C)", col="navy")
+```
+
+Berdasarkan Plot Suhu Rata-Rata Harian Kota Bogor, terlihat bahwa suhu udara berfluktuasi pada rentang $23^\circ\text{C}$ hingga $29.5^\circ\text{C}$ secara berulang (cyclical) dan cenderung kembali ke nilai rata-ratanya di sekitar $26^\circ\text{C}$–$27^\circ\text{C}$ tanpa menunjukkan tren naik atau turun yang ekstrem, yang mengindikasikan bahwa data sudah stasioner dalam rataan, namun variasi lebar pita gelombangnya yang tidak seragam di beberapa periode menunjukkan bahwa data masih belum stasioner dalam ragam (varians).
+
+# Pembagian Data Train dan Test
+
+```{r}
+n <- length(suhu)
+n_train <- round(0.8 * n)
+
+data_train <- suhu[1:n_train]
+data_test  <- suhu[(n_train + 1):n]
+
+train_ts <- ts(data_train)
+test_ts  <- ts(data_test)
+
+plot.ts(train_ts, xlim=c(1, n), ylim=range(suhu), col="blue", main="Pembagian Data Train & Test", ylab="Suhu (°C)")
+lines((n_train + 1):n, test_ts, col="red")
+legend("topleft", legend=c("Train", "Test"), col=c("blue", "red"), lty=1)
+```
+
+Pembagian data (data splitting) dilakukan secara kronologis untuk memisahkan 1.004 amatan menjadi dua bagian, yaitu Data Train sebesar 80% (803 amatan pertama, ditunjukkan oleh garis biru) yang digunakan untuk pembentukan dan estimasi model, serta Data Test sebesar 20% (201 amatan terakhir, ditunjukkan oleh garis merah) yang dialokasikan khusus sebagai pembanding untuk menguji tingkat akurasi hasil peramalan model ARIMA.
+
+# Cek Stasioneritas
+
+## Stasioner dalam Ragam (Box-Cox)
+
+```{r}
+library(MASS)
+index <- seq_along(train_ts)
+bc <- boxcox(train_ts ~ index, plotit = TRUE)
+
+lambda <- bc$x[which.max(bc$y)]
+ci_lambda <- bc$x[bc$y > max(bc$y) - 1/2 * qchisq(0.95, 1)]
+
+cat("Lambda Optimal :", lambda, "\n")
+cat("Interval CI 95% : [", min(ci_lambda), ",", max(ci_lambda), "]\n")
+```
+
+Berdasarkan hasil pengujian Box-Cox, diperoleh nilai λ optimal sebesar −0.8686869 dengan interval kepercayaan 95% berada pada rentang [−2,0.5858586]. Karena interval kepercayaan tersebut tidak mengandung angka 1, maka dapat disimpulkan bahwa data suhu rata-rata harian Kota Bogor belum stasioner dalam ragam sehingga diperlukan transformasi Box-Cox pada data train sebelum melanjutkan ke tahap pemodelan ARIMA.
+
+
+## Stasioner dalam Rataan (Plot ACF dan Uji ADF)
+
+```{r}
+acf(train_ts, main="Plot ACF Data Train")
+
+adf.test(train_ts)
+```
+
+Berdasarkan Plot ACF, terlihat bahwa nilai autokorelasi menurun secara perlahan dari lag awal, sementara hasil uji Augmented Dickey-Fuller (ADF) menghasilkan nilai statistik $-4.5031$ dengan $p\text{-value} = 0.01$ ($< 0.05$), sehingga $\text{H}_0$ ditolak dan dapat disimpulkan bahwa data train suhu rata-rata harian Kota Bogor sudah stasioner dalam rataan pada tingkat level ($d = 0$) tanpa memerlukan proses diferencing.
+
+## Penanganan Ketidakstasioneran
+
+```{r}
+if (abs(lambda) < 1e-6) {
+  train_bc <- log(train_ts)
+} else {
+  train_bc <- (train_ts^lambda - 1) / lambda
+}
+
+par(mfrow=c(1,2))
+plot.ts(train_ts, main="Data Train Sebelum Transformasi", ylab="Suhu Awal")
+plot.ts(train_bc, main="Data Train Setelah Box-Cox", ylab="Suhu Ter-transformasi")
+par(mfrow=c(1,1))
+```
+
+## Uji ADF pada Data Hasil Transformasi
+
+```{r}
+adf.test(train_bc)
+```
+
+Berdasarkan plot perbandingan Data Train Sebelum Transformasi dan Data Train Setelah Box-Cox, terlihat bahwa penerapan transformasi Box-Cox dengan nilai $\lambda = -0.8686869$ berhasil menyeimbangkan serta meratakan lebar pita fluktuasi (varians) data suhu rata-rata harian Kota Bogor tanpa mengubah pola dasar pergerakan suhunya, sehingga data train_bc yang dihasilkan kini telah memenuhi asumsi stasioner dalam ragam dan siap digunakan untuk tahapan identifikasi serta estimasi model ARIMA($p, 0, q$).
+
+# Identifikasi Model Potensial
+
+```{r}
+par(mfrow=c(1,2))
+acf(train_bc, main="Plot ACF (Data Box-Cox)")
+pacf(train_bc, main="Plot PACF (Data Box-Cox)")
+par(mfrow=c(1,1))
+
+eacf(train_bc)
+```
+
+Berdasarkan Plot ACF data train_bc, grafik menurun secara perlahan (tails off), sementara Plot PACF memotong (cuts off) setelah lag 1, yang mengindikasikan adanya komponen tentatif AR(1). Lebih lanjut, matriks Empirical Autocorrelation Function (EACF) membentuk segitiga nol yang dimulai dari koordinat (p=1,q=1), (p=1,q=2), hingga (p=2,q=1), sehingga diperoleh beberapa kandidat model ARIMA(p,0,q) potensial untuk diestimasi lebih lanjut, yaitu ARIMA(1,0,1), ARIMA(1,0,2), dan ARIMA(2,0,1).
+
+# Estimasi Parameter, Signifikansi, dan Nilai AIC
+
+```{r}
+# Model Kandidat 1: ARIMA(1,0,1)
+model1 <- Arima(train_bc, order=c(1,0,1))
+summary(model1)
+coeftest(model1)
+
+# Model Kandidat 2: ARIMA(2,0,1)
+model2 <- Arima(train_bc, order=c(2,0,1))
+summary(model2)
+coeftest(model2)
+
+# Model Kandidat 3: ARIMA(1,0,2)
+model3 <- Arima(train_bc, order=c(1,0,2))
+summary(model3)
+coeftest(model3)
+
+# Perbandingan Nilai AIC
+data.frame(
+  Model = c("ARIMA(1,0,1)", "ARIMA(2,0,1)", "ARIMA(1,0,2)"),
+  AIC   = c(model1$aic, model2$aic, model3$aic)
+)
+```
+
+Di antara ketiga kandidat yang parameternya sama-sama signifikan, ARIMA(2,0,1) memiliki nilai AIC paling minimum, yaitu $-8290.162$. Karena semua parameter pada ARIMA(2,0,1) signifikan dan memberikan tingkat kebaikan fit (log-likelihood) paling tinggi ($4150.08$), model ini layak dipilih sebagai model terbaik untuk digunakan pada tahap diagnostik sisaan dan peramalan.
+
+# Diagnostik Residual
+
+```{r}
+model_terbaik <- model2
+residual <- residuals(model_terbaik)
+
+t.test(residual)
+
+Box.test(residual, type = "Ljung-Box")
+
+jarque.bera.test(residual)
+
+checkresiduals(model_terbaik)
+```
+
+Berdasarkan pengujian diagnostik residual, uji One Sample t-test menghasilkan $p\text{-value} = 0.9669$ ($>0.05$) yang mengindikasikan bahwa rata-rata sisaan sama dengan nol dan uji Ljung-Box menghasilkan $p\text{-value} = 0.8189$ ($>0.05$) yang menunjukkan sisaan telah bersifat white noise (saling bebas/tidak ada autokorelasi), namun uji Jarque-Bera menghasilkan $p\text{-value} = 5.659 \times 10^{-5}$ ($<0.05$) yang mengindikasikan sisaan belum berdistribusi normal, sehingga secara umum model telah memenuhi asumsi dasar ekspektasi nol dan white noise meskipun terdapat sedikit deviasi pada normalitas sisaannya.
+
+# Uji Overfitting
+
+```{r}
+# Overfitting ke ARIMA(1,0,1)
+model_overfit1 <- Arima(train_bc, order=c(1,0,1))
+coeftest(model_overfit1)
+
+# Overfitting ke ARIMA(1,0,2)
+model_overfit2 <- Arima(train_bc, order=c(1,0,2))
+coeftest(model_overfit2)
+```
+
+Uji overfitting dilakukan untuk menguji ketahanan model dasar ARIMA(1,0,1) dengan menaikkan ordo menjadi model ARIMA(1,0,2). Hasil z-test of coefficients menunjukkan bahwa parameter tambahan $\text{ma2} = -0.1535$ bernilai signifikan pada taraf nyata $5\%$ ($p\text{-value} = 0.0027 < 0.05$), begitu pula dengan parameter $\text{ar1}$, $\text{ma1}$, dan intercept yang seluruhnya tetap signifikan ($p\text{-value} < 0.05$). Masing-masing model menghasilkan nilai estimasi yang teruji secara statistik, sehingga model dasar ARIMA(1,0,1) terbukti telah parsimonious (sederhana serta hemat parameter) dan penambahan ordo ke ARIMA(1,0,2) dapat dikonfirmasi sebagai bentuk evaluasi struktur dependensi data yang valid.
+
+```{r}
+h_test <- length(test_ts)
+
+ramalan_bc <- forecast(model_terbaik, h = h_test)
+
+if (abs(lambda) < 1e-6) {
+  ramalan_skala_asli <- exp(ramalan_bc$mean)
+} else {
+  ramalan_skala_asli <- (ramalan_bc$mean * lambda + 1)^(1 / lambda)
+}
+
+y_min <- min(c(as.numeric(suhu), ramalan_skala_asli), na.rm = TRUE)
+y_max <- max(c(as.numeric(suhu), ramalan_skala_asli), na.rm = TRUE)
+
+plot(1:n_train, as.numeric(train_ts), type = "l", col = "black",
+     xlim = c(1, n), ylim = c(y_min, y_max),
+     main = "Hasil Peramalan ARIMA(p,0,q) vs Data Test",
+     xlab = "Waktu (Hari ke-)", ylab = "Suhu (°C)")
+
+lines((n_train + 1):n, as.numeric(test_ts), col = "red", lwd = 2)
+lines((n_train + 1):n, ramalan_skala_asli, col = "blue", lwd = 2)
+
+legend("topleft", 
+       legend = c("Data Train", "Data Test (Aktual)", "Hasil Ramalan (Invers Box-Cox)"), 
+       col = c("black", "red", "blue"), 
+       lty = 1, lwd = c(1, 2, 2))
+
+accuracy(ramalan_skala_asli, as.numeric(test_ts))
+```
+
+Berdasarkan plot hasil peramalan pada skala suhu asli (°C), garis ramalan (biru) terlihat cenderung datar pada kisaran $26^\circ\text{C}$ mengikuti nilai ekspektasi rata-rata jangka panjangnya, sehingga belum mampu menangkap lonjakan tren naik pada data test aktual (merah) di akhir periode pengamatan. Meskipun demikian, hasil evaluasi akurasi menunjukkan performa model yang tergolong sangat baik dalam skala kesalahan relatif, dengan nilai MAPE sebesar $4.25\%$ dan RMSE sebesar $1.387^\circ\text{C}$ yang menandakan bahwa model ARIMA($2,0,1$) ter-transformasi ini cukup presisi dan layak digunakan untuk prediksi jangka pendek.
